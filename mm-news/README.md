@@ -63,6 +63,8 @@ token = "YOUR_MATTERMOST_ACCESS_TOKEN"
 api_key = "YOUR_GEMINI_API_KEY"
 # Fallback sequence of preferred Gemini model identifiers
 preferred_models = ["gemini-3.5-flash", "gemini-2.5-pro", "gemini-2.5-flash"]
+# Optional request timeout (in seconds), defaults to 20
+timeout_seconds = 20
 ```
 
 ---
