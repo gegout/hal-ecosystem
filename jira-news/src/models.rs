@@ -6,6 +6,11 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct JiraSearchResult {
     pub issues: Vec<JiraIssue>,
+    pub total: Option<i64>,
+    #[serde(rename = "startAt")]
+    pub start_at: Option<i64>,
+    #[serde(rename = "maxResults")]
+    pub max_results: Option<i64>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

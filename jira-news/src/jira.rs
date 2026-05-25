@@ -42,25 +42,42 @@ impl JiraClient {
 
     pub async fn search_issues(&self, jql: &str) -> Result<Vec<JiraIssue>> {
         let url = format!("{}/rest/api/3/search/jql", self.base_url);
-        
-        let mut req = self.client.get(&url)
-            .query(&[
-                ("jql", jql),
-                ("fields", "key,summary,status,assignee,updated,description,comment"),
-                ("maxResults", "100"),
-            ]);
+        let mut all_issues = Vec::new();
+        let mut start_at = 0;
+        let max_results = 100;
 
-        req = self.add_auth(req);
-        
-        let res = req.send().await?;
+        loop {
+            let mut req = self.client.get(&url)
+                .query(&[
+                    ("jql", jql),
+                    ("fields", "key,summary,status,assignee,updated,description,comment"),
+                    ("startAt", &start_at.to_string()),
+                    ("maxResults", &max_results.to_string()),
+                ]);
 
-        if !res.status().is_success() {
-            let status = res.status();
-            let body = res.text().await.unwrap_or_default();
-            return Err(anyhow!("Failed to search Jira issues: {}. Response: {}", status, body));
+            req = self.add_auth(req);
+            
+            let res = req.send().await?;
+
+            if !res.status().is_success() {
+                let status = res.status();
+                let body = res.text().await.unwrap_or_default();
+                return Err(anyhow!("Failed to search Jira issues: {}. Response: {}", status, body));
+            }
+
+            let search_result = res.json::<JiraSearchResult>().await?;
+            let issues_len = search_result.issues.len();
+            
+            all_issues.extend(search_result.issues);
+
+            let total = search_result.total.unwrap_or(0);
+            start_at += issues_len;
+
+            if start_at >= total as usize || issues_len == 0 {
+                break;
+            }
         }
 
-        let search_result = res.json::<JiraSearchResult>().await?;
-        Ok(search_result.issues)
+        Ok(all_issues)
     }
 }
