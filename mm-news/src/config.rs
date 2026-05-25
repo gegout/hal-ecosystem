@@ -24,6 +24,7 @@ pub struct GeminiConfig {
     pub api_key: String,
     pub preferred_models: Option<Vec<String>>,
     pub test_mock_url: Option<String>,
+    pub timeout_seconds: Option<u64>,
 }
 
 impl Config {

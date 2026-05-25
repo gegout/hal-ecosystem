@@ -49,21 +49,28 @@ pub async fn generate_content(
             ),
         };
 
+        let timeout_secs = config.timeout_seconds.unwrap_or(20);
+        let timeout_duration = Duration::from_secs(timeout_secs);
+
         let res = match client
             .post(&url)
             .json(&payload)
-            .timeout(Duration::from_secs(20))
+            .timeout(timeout_duration)
             .send()
             .await
         {
             Ok(r) => r,
             Err(e) => {
+                let err_msg = e.to_string().replace(&config.api_key, "[REDACTED]");
                 if e.is_timeout() {
-                    warn!("Gemini model {} request timed out after 20 seconds: {}", model, e);
+                    warn!(
+                        "Gemini model {} request timed out after {} seconds: {}",
+                        model, timeout_secs, err_msg
+                    );
                 } else {
-                    warn!("Gemini model {} connection failed: {}", model, e);
+                    warn!("Gemini model {} connection failed: {}", model, err_msg);
                 }
-                last_err = Some(anyhow!(e));
+                last_err = Some(anyhow!("{}", err_msg));
                 continue;
             }
         };
@@ -72,8 +79,12 @@ pub async fn generate_content(
         let body = res.text().await.unwrap_or_default();
 
         if !status.is_success() {
-            warn!("Gemini model {} returned error status: {}. Response: {}", model, status, body);
-            last_err = Some(anyhow!("HTTP {}: {}", status, body));
+            let body_scrubbed = body.replace(&config.api_key, "[REDACTED]");
+            warn!(
+                "Gemini model {} returned error status: {}. Response: {}",
+                model, status, body_scrubbed
+            );
+            last_err = Some(anyhow!("HTTP {}: {}", status, body_scrubbed));
             continue;
         }
 

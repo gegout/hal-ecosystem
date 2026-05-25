@@ -121,6 +121,7 @@ mod tests {
                 "gemini-2.5-flash".to_string(),
             ]),
             test_mock_url: Some(mock_server_url),
+            timeout_seconds: None,
         };
 
         let res = gemini::generate_content(&config, "system prompt", "user prompt").await;
