@@ -43,7 +43,7 @@ impl JiraClient {
     pub async fn search_issues(&self, jql: &str) -> Result<Vec<JiraIssue>> {
         let url = format!("{}/rest/api/3/search/jql", self.base_url);
         let mut all_issues = Vec::new();
-        let mut start_at = 0;
+        let mut next_token: Option<String> = None;
         let max_results = 100;
 
         loop {
@@ -51,9 +51,12 @@ impl JiraClient {
                 .query(&[
                     ("jql", jql),
                     ("fields", "key,summary,status,assignee,updated,description,comment"),
-                    ("startAt", &start_at.to_string()),
                     ("maxResults", &max_results.to_string()),
                 ]);
+
+            if let Some(token) = &next_token {
+                req = req.query(&[("nextPageToken", token)]);
+            }
 
             req = self.add_auth(req);
             
@@ -70,10 +73,10 @@ impl JiraClient {
             
             all_issues.extend(search_result.issues);
 
-            let total = search_result.total.unwrap_or(0);
-            start_at += issues_len;
+            let is_last = search_result.is_last.unwrap_or(true);
+            next_token = search_result.next_page_token.clone();
 
-            if start_at >= total as usize || issues_len == 0 {
+            if is_last || next_token.is_none() || issues_len == 0 {
                 break;
             }
         }
