@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "HAL"
+		},
+		{
+			"path": "wingfoil-copilot"
+		},
+		{
+			"path": "healthchecker"
+		},
+		{
+			"path": "mm-news"
+		},
+		{
+			"path": "jira-news"
+		}
+	],
+	"settings": {}
+}

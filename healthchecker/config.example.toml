@@ -1,0 +1,25 @@
+# Healthchecker config
+# Located at: ~/.config/healthchecker/config.toml
+
+[openai]
+# OpenAI-compatible API key for AI summarization
+api_key = "sk-your-api-key-here"
+base_url = "https://api.openai.com/v1"
+preferred_models = ["gpt-4o-mini", "gpt-4o"]
+
+[hal]
+# Path to HAL's application registry (where [[applications]] are declared)
+app_registry_path = "~/.config/hal/config.toml"
+# Path to HAL's core internal config (API keys, models)
+core_config_path = "~/.config/hal/halcore/config.toml"
+# Systemd service name for the HAL daemon
+service_name = "hal"
+# Path to the HAL binary
+binary_path = "~/bin/hal"
+
+[prompts]
+# Path to system monitoring system prompt
+system_prompt_path = "~/.config/healthchecker/SYSTEM_PROMPT_SYSTEM.md"
+# Path to integration healthcheck system prompt
+health_prompt_path = "~/.config/healthchecker/SYSTEM_PROMPT_HEALTH.md"
+

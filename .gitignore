@@ -1,0 +1,20 @@
+# Build directories
+target/
+**/target/
+
+# OS and IDE specific files
+.DS_Store
+.vscode/
+.idea/
+
+# Logging outputs
+*.log
+**/logs/
+**/~/logs/
+
+# Compiled binaries
+*.bin
+*.exe
+*.dll
+*.so
+*.dylib

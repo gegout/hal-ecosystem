@@ -1,0 +1,28 @@
+[telegram]
+bot_token="YOUR_TELEGRAM_BOT_TOKEN_HERE"
+allowed_users=[123456789]
+
+[halcore]
+transport="stdio"
+command="~/bin/halcore"
+
+[[applications]]
+name="wingfoil-copilot"
+transport="stdio"
+command="~/bin/wingfoil-copilot"
+commands=[
+    "wingfoil",
+    "wingfoil_today",
+    "wingfoil_tomorrow"
+]
+description="Analyze wingfoil conditions at Baie de Lancieux"
+
+[[applications]]
+name="mattermost-digest"
+transport="http"
+url="http://127.0.0.1:8090/digest"
+commands=[
+    "digest",
+    "channels"
+]
+description="Generate Mattermost daily channels digest summary"

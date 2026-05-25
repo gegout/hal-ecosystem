@@ -1,0 +1,31 @@
+[holfuy]
+url="https://holfuy.com/fr/weather/1474"
+
+[meteoconsult]
+url="https://marine.meteoconsult.fr/meteo-marine/bulletin-detaille/spot-de-glisse-365/previsions-meteo-baie-de-lancieux-aujourdhui"
+
+[meteoblue]
+url="https://my.meteoblue.com/packages/basic-1h_basic-day_wind-1h_sea-1h?lat=48.6076&lon=-2.1554&asl=0&tz=Europe%2FParis&format=json&apikey=YOUR_API_KEY"
+
+[wingfoil]
+min_average_wind_kmh=20
+max_gust_kmh=60
+max_wave_height_m=1.8
+wind_correction_weight=0.7
+gust_correction_weight=0.5
+
+[openai]
+api_key="YOUR_KEY"
+base_url="https://api.openai.com/v1"
+preferred_models=[
+    "gpt-5-mini",
+    "gpt-5"
+]
+
+[browser]
+headless=true
+wait_after_load_ms=3000
+ocr_enabled=true
+
+[prompts]
+system_prompt_path="~/.config/wingfoil-copilot/SYSTEM_PROMPT.md"
