@@ -144,6 +144,19 @@ async fn handle_request(req: &protocol::ApplicationRequest) -> Result<()> {
 
     protocol::send_progress(&req.request_id, 80, "🧠 Summarizing with Gemini...");
 
+    // Write the compact markdown to a temporary/cache file on disk before sending to Gemini
+    let cache_dir = dirs::cache_dir()
+        .unwrap_or_else(|| dirs::home_dir().map(|h| h.join(".cache")).unwrap_or_else(|| std::env::temp_dir()))
+        .join("jira-news");
+    fs::create_dir_all(&cache_dir).context("Failed to create cache directory for markdown input")?;
+    let md_file_path = cache_dir.join("jira_updates.md");
+    fs::write(&md_file_path, &jira_md).context("Failed to write compact markdown file")?;
+    info!("Saved compact JIRA updates to markdown file: {:?}", md_file_path);
+
+    // Read the compact markdown file to send its contents to Gemini
+    let jira_md_from_file = fs::read_to_string(&md_file_path)
+        .context("Failed to read compact JIRA updates from markdown file")?;
+
     let prompt_path = dirs::config_dir()
         .context("Could not determine config directory")?
         .join("jira-news")
@@ -156,7 +169,7 @@ async fn handle_request(req: &protocol::ApplicationRequest) -> Result<()> {
         return Err(anyhow!("System prompt file not found at {:?}", prompt_path));
     };
 
-    let summary = match gemini::generate_content(&config.gemini, &system_prompt, &jira_md).await {
+    let summary = match gemini::generate_content(&config.gemini, &system_prompt, &jira_md_from_file).await {
         Ok(s) => s,
         Err(e) => {
             warn!("Gemini generation completely failed: {:?}", e);

@@ -55,6 +55,31 @@ pub struct Config {
     pub halcore: HalCoreConfig,
     pub applications: Vec<ApplicationConfig>,
     pub app_timeout_seconds: Option<u64>,
+    #[serde(default)]
+    pub http: Option<HttpConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HttpConfig {
+    pub enabled: bool,
+    pub bind_address: String,
+    pub port: u16,
+    #[serde(default)]
+    pub api_keys: Vec<String>,
+}
+
+impl HttpConfig {
+    pub fn normalized_api_keys(&self) -> Vec<String> {
+        self.api_keys
+            .iter()
+            .map(|x| x.trim().to_string())
+            .filter(|x| !x.is_empty())
+            .collect()
+    }
+
+    pub fn auth_required(&self) -> bool {
+        !self.normalized_api_keys().is_empty()
+    }
 }
 
 pub struct ConfigManager {
@@ -99,6 +124,12 @@ timeout_seconds=60
 
 app_timeout_seconds=60
 
+[http]
+enabled=true
+bind_address="127.0.0.1"
+port=8080
+api_keys=[]
+
 [[applications]]
 name="wingfoil-copilot"
 transport="stdio"
@@ -109,6 +140,7 @@ description="Analyze wingfoil conditions"
             std::fs::write(path, template)?;
             warn!("Configuration file not found. Created a template config at {:?}", path);
         }
+
 
         let content = std::fs::read_to_string(path)?;
         let config: Config = toml::from_str(&content)?;

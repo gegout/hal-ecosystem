@@ -61,6 +61,10 @@ impl SessionManager {
         })
     }
 
+    pub fn active_sessions_count(&self) -> usize {
+        self.active_sessions.len()
+    }
+
     pub fn get_session(&self, chat_id: i64, user_id: i64) -> Session {
         // First check in-memory cache
         if let Some(session) = self.active_sessions.get(&chat_id) {

@@ -89,8 +89,8 @@ impl Router {
     ) -> Result<FinalResponse, anyhow::Error> {
         let config = self.config_manager.get_config().await;
         
-        // 1. Authorize user
-        if !config.telegram.allowed_users.contains(&user_id) {
+        // 1. Authorize user (bypass for HTTP requests denoted by user_id = -1)
+        if user_id != -1 && !config.telegram.allowed_users.contains(&user_id) {
             warn!("Unauthorized access attempt by user_id={}", user_id);
             return Err(anyhow::anyhow!("Unauthorized user"));
         }

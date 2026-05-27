@@ -256,7 +256,124 @@ cargo test --workspace
 
 ---
 
+## 🌐 OpenAI-Compatible HTTP Façade
+
+HAL now features a high-performance, production-quality **OpenAI-compatible HTTP Façade**. This allows modern AI frontends (such as **OpenWebUI**, browser chat interfaces, curl, and scripts) to use HAL's coordination engine and specialized applications directly as custom LLM models.
+
+The façade translates standard OpenAI HTTP requests on-the-fly to internal HAL requests, streams progress updates as `text/event-stream` SSE tokens, integrates with HAL's session manager, and routes queries to correct specialized applications.
+
+### 1. Configuration (`~/.config/hal/config.toml`)
+
+Add the `[http]` section to your configuration:
+
+```toml
+[http]
+enabled = true
+bind_address = "127.0.0.1" # Bind to localhost by default for security
+port = 8080
+
+# Configure API keys. If empty, authentication is disabled and local access is allowed.
+# If entries are present, all requests (except /health) require a matching Bearer token.
+api_keys = [
+  "optional-local-api-key1",
+  "optional-local-api-key2"
+]
+```
+
+### 2. Supported Endpoints
+
+| Endpoint | Method | Authentication | Purpose |
+|---|---|---|---|
+| `/health` | `GET` | No | Basic health check and uptime metrics |
+| `/v1/status` | `GET` | Yes | Extended registry, active sessions, and status metrics |
+| `/v1/models` or `/models` | `GET` | Yes | Lists available models (base `hal` and `hal:<app_name>`) |
+| `/v1/chat/completions` | `POST` | Yes | Chat completion endpoint (streaming and non-streaming) |
+
+### 3. API Usage Examples
+
+#### A. Fetch Available Models
+```bash
+curl -X GET http://127.0.0.1:8080/v1/models \
+  -H "Authorization: Bearer optional-local-api-key1"
+```
+*Output:*
+```json
+{
+  "object": "list",
+  "data": [
+    { "id": "hal", "object": "model", "created": 0, "owned_by": "local" },
+    { "id": "hal:wingfoil-copilot", "object": "model", "created": 0, "owned_by": "hal" },
+    { "id": "hal:mm-news", "object": "model", "created": 0, "owned_by": "hal" }
+  ]
+}
+```
+
+#### B. Non-Streaming Chat Completion
+Targeting the base `hal` coordinator model:
+```bash
+curl -X POST http://127.0.0.1:8080/v1/chat/completions \
+  -H "Authorization: Bearer optional-local-api-key1" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "hal",
+    "messages": [{"role": "user", "content": "/wingfoil today"}]
+  }'
+```
+
+#### C. Streaming Chat Completion with Live Progress Updates
+```bash
+curl -X POST http://127.0.0.1:8080/v1/chat/completions \
+  -H "Authorization: Bearer optional-local-api-key1" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "hal",
+    "messages": [{"role": "user", "content": "today"}],
+    "stream": true
+  }'
+```
+*Example Server-Sent Events (SSE) Stream output:*
+```text
+data: {"id":"chatcmpl-hal-uuid","object":"chat.completion.chunk","created":1760000000,"model":"hal","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-hal-uuid","object":"chat.completion.chunk","created":1760000000,"model":"hal","choices":[{"index":0,"delta":{"content":"Consulting wind sensors...\n"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-hal-uuid","object":"chat.completion.chunk","created":1760000000,"model":"hal","choices":[{"index":0,"delta":{"content":"Analyzing forecast data...\n"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-hal-uuid","object":"chat.completion.chunk","created":1760000000,"model":"hal","choices":[{"index":0,"delta":{"content":"<b>Fantastic session expected today!</b> NW 25 knots.\n"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-hal-uuid","object":"chat.completion.chunk","created":1760000000,"model":"hal","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}
+
+data:[DONE]
+```
+
+#### D. Direct Model Invocation
+By specifying `"model": "hal:wingfoil-copilot"`, the façade automatically translates plain text messages (e.g. `"today"`) into the appropriate registered commands for that application (e.g. `/wingfoil today`) and routes it immediately, removing the need to type slash commands:
+```bash
+curl -X POST http://127.0.0.1:8080/v1/chat/completions \
+  -H "Authorization: Bearer optional-local-api-key1" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "hal:wingfoil-copilot",
+    "messages": [{"role": "user", "content": "today"}],
+    "user": "custom-session-id"
+  }'
+```
+
+### 4. Integration with OpenWebUI
+
+To integrate HAL with your OpenWebUI instance:
+1. Go to **Admin Settings** -> **Connections** -> **OpenAI API**.
+2. Add a new connection:
+   - **API URL**: `http://127.0.0.1:8080/v1`
+   - **API Key**: `optional-local-api-key1` (or whichever key you configured)
+3. Save.
+4. You will instantly see `hal` and all registered apps (e.g. `hal:wingfoil-copilot`) appear in your Model Selector list! 
+5. Select `hal:wingfoil-copilot` or any other tool, type your message, and watch real-time, line-by-line progress updates stream directly inside the OpenWebUI chat pane!
+
+---
+
 ## 📄 License & Copyright
 
 Copyright (c) 2026 Cedric Gegout. All rights reserved.
 Licensed under the [MIT License](file:///home/cgegout/Documents/Antigravity/HAL/LICENSE).
+

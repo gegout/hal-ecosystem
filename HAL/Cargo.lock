@@ -532,7 +532,7 @@ dependencies = [
 
 [[package]]
 name = "hal"
-version = "0.1.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -547,6 +547,7 @@ dependencies = [
  "teloxide",
  "thiserror 1.0.69",
  "tokio",
+ "tokio-stream",
  "toml",
  "tracing",
  "tracing-appender",
@@ -556,7 +557,7 @@ dependencies = [
 
 [[package]]
 name = "halcore"
-version = "0.1.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "futures",
@@ -1879,6 +1880,7 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
  "tokio",
+ "tokio-util",
 ]
 
 [[package]]

@@ -18,21 +18,46 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-pub mod config;
-pub mod logging;
-pub mod protocol;
-pub mod transport;
-pub mod progress;
-pub mod registry;
-pub mod router;
-pub mod session;
-pub mod telemetry;
-pub mod tool_registry;
-pub mod tool_manager;
-pub mod telegram;
-pub mod halcore;
-pub mod http;
-pub mod http_models;
-pub mod http_auth;
-pub mod http_stream;
+use axum::http::HeaderMap;
+use crate::config::HttpConfig;
 
+/// Check if the request is authorized based on the HttpConfig.
+///
+/// Rules:
+/// - If `api_keys` is empty:
+///   - Authentication disabled
+///   - Local access allowed
+/// - If `api_keys` contains entries:
+///   - Authentication required
+///
+/// Authentication format:
+/// ```http
+/// Authorization: Bearer <api_key>
+/// ```
+///
+/// Valid if:
+/// - Token exactly matches one configured key (after trimming whitespace and ignoring empty keys)
+pub fn is_authorized(
+    headers: &HeaderMap,
+    config: &HttpConfig
+) -> bool {
+    let keys = config.normalized_api_keys();
+
+    if keys.is_empty() {
+        return true;
+    }
+
+    let Some(value) = headers.get("authorization") else {
+        return false;
+    };
+
+    let Ok(value) = value.to_str() else {
+        return false;
+    };
+
+    let Some(token) = value.strip_prefix("Bearer ") else {
+        return false;
+    };
+
+    keys.iter().any(|x| x == token.trim())
+}

@@ -144,6 +144,7 @@ async fn test_exhaustive_app_registry() {
             }
         ],
         app_timeout_seconds: None,
+        http: None,
     };
 
     registry.load_from_config(&config).await;

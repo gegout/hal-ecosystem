@@ -89,17 +89,39 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 7. Initialize Router
     let router = Arc::new(router::Router::new(registry.clone(), config_manager.clone()));
 
-    // 8. Start Telegram Bot Listener Loop
-    let bot_token = initial_config.telegram.bot_token.clone();
-    
-    if bot_token.is_empty() || bot_token == "YOUR_BOT_TOKEN_HERE" {
-        info!("Bot token is empty. Please set bot_token in ~/.config/hal/config.toml to use the Telegram interface.");
-        info!("HAL is idling. Compile and configure complete.");
+    // 8. Start HTTP façade if enabled
+    let http_enabled = initial_config.http.as_ref().map(|h| h.enabled).unwrap_or(false);
+    let http_handle = if http_enabled {
+        let config_manager_c = config_manager.clone();
+        let registry_c = registry.clone();
+        let session_manager_c = session_manager.clone();
+        let router_c = router.clone();
         
-        // Wait indefinitely or join the watcher handle to prevent exit
-        let _ = tokio::join!(watch_handle);
+        let handle = tokio::spawn(async move {
+            if let Err(e) = hal::http::start_http_server(config_manager_c, registry_c, session_manager_c, router_c).await {
+                tracing::error!("HTTP server error: {}", e);
+            }
+        });
+        Some(handle)
     } else {
+        None
+    };
+
+    // 9. Start Telegram Bot Listener Loop
+    let bot_token = initial_config.telegram.bot_token.clone();
+    let bot_enabled = !bot_token.is_empty() && bot_token != "YOUR_BOT_TOKEN_HERE";
+
+    if bot_enabled {
         telegram::start_bot(bot_token, router, session_manager, telemetry_manager).await?;
+    } else {
+        info!("Bot token is empty. Please set bot_token in ~/.config/hal/config.toml to use the Telegram interface.");
+        if let Some(http_h) = http_handle {
+            info!("Awaiting HTTP façade server...");
+            let _ = http_h.await;
+        } else {
+            info!("HAL is idling. Compile and configure complete.");
+            let _ = tokio::join!(watch_handle);
+        }
     }
 
     Ok(())

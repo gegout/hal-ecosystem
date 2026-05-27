@@ -79,6 +79,7 @@ mod tests {
                 }
             ],
             app_timeout_seconds: None,
+            http: None,
         };
 
         registry.load_from_config(&config).await;

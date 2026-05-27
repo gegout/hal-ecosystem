@@ -109,6 +109,16 @@ impl ApplicationRegistry {
         list.sort_by(|a, b| a.command.cmp(&b.command));
         list
     }
+
+    pub async fn get_applications(&self) -> Vec<ApplicationDefinition> {
+        let list = self.applications.read().await;
+        list.clone()
+    }
+
+    pub async fn get_command_to_app_map(&self) -> HashMap<String, String> {
+        let map = self.command_to_app.read().await;
+        map.iter().map(|(cmd, app)| (cmd.clone(), app.name.clone())).collect()
+    }
 }
 
 #[cfg(test)]
@@ -149,6 +159,7 @@ mod tests {
                 },
             ],
             app_timeout_seconds: None,
+            http: None,
         };
 
         registry.load_from_config(&config).await;
